@@ -17,8 +17,6 @@ while stat:
         print(f"Client {cmd1[1]} connected!")
         client.connect((SERVER, PORT))
         client.send(f"CONNECT {cmd1[1]}".encode(FORMAT))
-        # response = client.recv(1024).decode(FORMAT)
-        # print(response)
         conn = True 
         while conn:
             msg = input("Enter a command: ")
