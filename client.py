@@ -7,8 +7,8 @@ import re
 
 FORMAT = 'ascii'
 SERVER = "127.0.0.1"
-PORT = 2000
-PORT1 = 3000
+PORT = 2021
+PORT1 = 2022
 SERVER_DATA_PATH = "server_data"
 CLIENT_DATA_PATH = "client_data"
 stat  = True
@@ -25,83 +25,83 @@ def func(char, client):
 def sending(client):
     global stat, conn
     while conn:
-        mutex.acquire()
         msg = input("Enter a command: ")
         cmd2 = msg.split()
         com = cmd2[0]
-        if len(cmd2) == 1:
-            if com == 'disconnect':
-                client.send("DISCONNECT".encode(FORMAT))
-                response = client.recv(1024).decode(FORMAT)
-                if response == 'OK':
-                    print('Disconnecting')
-                    client.close()
-                    conn = False
-                else:
-                    print("Failed to disconnect!")
-            elif com == 'lu':
-                client.send("LU".encode(FORMAT))
-                response = client.recv(1024).decode(FORMAT)
-                print(response)                        
-            elif com == 'lf':
-                client.send("LF".encode(FORMAT))
-                response = client.recv(1024).decode(FORMAT)
-                print(response)
+        if com == 'disconnect':
+            client.send("DISCONNECT".encode(FORMAT))
+            response = client.recv(1024).decode(FORMAT)
+            if response == 'OK':
+                mutex.acquire()
+                print('Disconnecting')
+                client.close()
+                conn = False
+                mutex.release()
             else:
-                print("Wrong command! Try again.")
-        elif len(cmd2) == 2:
-            if com == "read":
-                client.send(f"READ {cmd2[1]}".encode(FORMAT))
-                print(client.recv(1024).decode(FORMAT))
-                files = os.listdir(CLIENT_DATA_PATH)
-                if cmd2[1] in files:
-                    print("Client already contains this file!")
-                else:
-                    filesize = func(' ', client)
-                    content = client.recv(int(filesize)).decode(FORMAT)
-                    filepath = os.path.join(CLIENT_DATA_PATH, cmd2[1]) 
-                    with open(filepath, "w") as f:
-                        f.write(content)
-                    print("File uploaded")                      
-            elif com == "write":
-                files = os.listdir(CLIENT_DATA_PATH)
-                if cmd2[1] not in files:
-                    client.send("Client does not contain this file!".encode(FORMAT))
-                else:
-                    client.send(f"WRITE {cmd2[1]}".encode(FORMAT))
-                a = client.recv(1024).decode(FORMAT)
-                print(a)
-                if a == "OK":
-                    path = os.path.join(CLIENT_DATA_PATH, cmd2[1])
-                    with open(f"{path}", "r") as f:
-                        text = f.read()
-                    size = os.path.getsize(path)
-                    client.send(f"{size} {text}".encode(FORMAT))
-            elif com == "overread":
-                client.send(f"OVERREAD {cmd2[1]}".encode(FORMAT))
-                print(client.recv(1024).decode(FORMAT))
+                print("Failed to disconnect!")
+        elif com == 'lu':
+            client.send("LU".encode(FORMAT))
+            response = client.recv(1024).decode(FORMAT)
+            mutex.acquire()
+            print(response)
+            mutex.release()                        
+        elif com == 'lf':
+            client.send("LF".encode(FORMAT))
+            response = client.recv(1024).decode(FORMAT)
+            mutex.acquire()
+            print(response)
+            mutex.release() 
+        elif com == "read":
+            client.send(f"READ {cmd2[1]}".encode(FORMAT))
+            print(client.recv(1024).decode(FORMAT))
+            files = os.listdir(CLIENT_DATA_PATH)
+            if cmd2[1] in files:
+                print("Client already contains this file!")
+            else:
                 filesize = func(' ', client)
                 content = client.recv(int(filesize)).decode(FORMAT)
                 filepath = os.path.join(CLIENT_DATA_PATH, cmd2[1]) 
                 with open(filepath, "w") as f:
                     f.write(content)
-                print("File replaced")      
-            elif com == "overwrite":
-                files = os.listdir(CLIENT_DATA_PATH)
-                if cmd2[1] not in files:
-                    client.send("Client does not contain this file!".encode(FORMAT))
-                else:
-                    client.send(f"OVERWRITE {cmd2[1]}".encode(FORMAT))
-                a = client.recv(1024).decode(FORMAT)
-                print(a)
-                if a == "OK":
-                    path = os.path.join(CLIENT_DATA_PATH, cmd2[1])
-                    with open(f"{path}", "r") as f:
-                        text = f.read()
-                    size = os.path.getsize(path)
-                    client.send(f"{size} {text}".encode(FORMAT))
+                print("File uploaded")                      
+        elif com == "write":
+            files = os.listdir(CLIENT_DATA_PATH)
+            if cmd2[1] not in files:
+                client.send("Client does not contain this file!".encode(FORMAT))
             else:
-                print("Wrong command! Try again.")
+                client.send(f"WRITE {cmd2[1]}".encode(FORMAT))
+            a = client.recv(1024).decode(FORMAT)
+            print(a)
+            if a == "OK":
+                path = os.path.join(CLIENT_DATA_PATH, cmd2[1])
+                with open(f"{path}", "r") as f:
+                    text = f.read()
+                size = os.path.getsize(path)
+                client.send(f"{size} {text}".encode(FORMAT))
+        elif com == "overread":
+            client.send(f"OVERREAD {cmd2[1]}".encode(FORMAT))
+            print(client.recv(1024).decode(FORMAT))
+            filesize = func(' ', client)
+            content = client.recv(int(filesize)).decode(FORMAT)
+            filepath = os.path.join(CLIENT_DATA_PATH, cmd2[1]) 
+            with open(filepath, "w") as f:
+                f.write(content)
+            print("File replaced")      
+        elif com == "overwrite":
+            files = os.listdir(CLIENT_DATA_PATH)
+            if cmd2[1] not in files:
+                client.send("Client does not contain this file!".encode(FORMAT))
+            else:
+                client.send(f"OVERWRITE {cmd2[1]}".encode(FORMAT))
+            a = client.recv(1024).decode(FORMAT)
+            print(a)
+            if a == "OK":
+                path = os.path.join(CLIENT_DATA_PATH, cmd2[1])
+                with open(f"{path}", "r") as f:
+                    text = f.read()
+                size = os.path.getsize(path)
+                client.send(f"{size} {text}".encode(FORMAT))
+        
         elif com == "append" and len(cmd2) >= 3:
             client.send(f"APPEND {cmd2[-1]}".encode(FORMAT))
             a = client.recv(1024).decode(FORMAT)
@@ -137,7 +137,7 @@ def sending(client):
             print(response)
         else:
             print("Wrong command! Try another pattern.")
-        mutex.release()
+        
 
 def receiving():
     global conn, SERVER
