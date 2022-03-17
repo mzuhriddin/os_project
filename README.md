@@ -1,2 +1,2 @@
 # os_project
-TTPU Operating Systems simple client server application
+TTPU Operating Systems simple client server application in python
